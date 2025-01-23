@@ -1,0 +1,34 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #4b5563 #d1d5db00;
+}
+
+.scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.scrollbar::-webkit-scrollbar-track {
+  background: #d1d5db;
+}
+
+.scrollbar::-webkit-scrollbar-thumb {
+  background-color: #4b5563;
+  border-radius: 20px;
+  border: 20px solid transparent;
+}
+
+.custom-dropdown {
+  width: 300px;
+  border: 1px solid black;
+}
+
+@layer base {
+  html {
+    @apply scroll-smooth;
+  }
+}
