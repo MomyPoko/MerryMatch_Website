@@ -364,7 +364,7 @@ const MatchingPage = () => {
   ]);
 
   useEffect(() => {
-    socket.current = io(process.env.NEXT_PUBLIC_SOCKET_SERVER_URL, {
+    socket.current = io("https://merrymatchsocket-production.up.railway.app/", {
       transports: ["websocket", "polling"],
     });
 
