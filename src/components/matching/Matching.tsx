@@ -69,7 +69,7 @@ const MatchingPage = () => {
 
   const { data: session } = useSession();
 
-  const SOCKET_SERVER_URL = "http://localhost:4000";
+  // const SOCKET_SERVER_URL = "http://localhost:4000";
 
   const swiperRef = useRef<any>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -364,7 +364,7 @@ const MatchingPage = () => {
   ]);
 
   useEffect(() => {
-    socket.current = io(SOCKET_SERVER_URL);
+    socket.current = io(process.env.SOCKET_SERVER_URL);
 
     socket.current.on("connect", () => {
       console.log("Socket connected:", socket.current?.id);
