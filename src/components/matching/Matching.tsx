@@ -364,7 +364,12 @@ const MatchingPage = () => {
   ]);
 
   useEffect(() => {
-    socket.current = io(process.env.SOCKET_SERVER_URL);
+    socket.current = io(
+      process.env.SOCKET_SERVER_URL || "http://localhost:4000",
+      {
+        transports: ["websocket", "polling"],
+      }
+    );
 
     socket.current.on("connect", () => {
       console.log("Socket connected:", socket.current?.id);
