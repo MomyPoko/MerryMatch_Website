@@ -365,7 +365,7 @@ const MatchingPage = () => {
 
   useEffect(() => {
     socket.current = io(
-      process.env.SOCKET_SERVER_URL || "http://localhost:4000",
+      process.env.NEXT_PUBLIC_SOCKET_SERVER_URL || "http://localhost:4000",
       {
         transports: ["websocket", "polling"],
       }
