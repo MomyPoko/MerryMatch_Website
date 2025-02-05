@@ -401,11 +401,11 @@ const MatchingPage = () => {
     <div className="w-full h-full flex overflow-hidden">
       {userData && (
         <>
-          <div className="w-[20%] h-full bg-gray-100 flex flex-col">
+          <div className="w-[20%] h-full flex flex-col">
             <div className="py-[30px] w-full border-b-[1px] border-gray-300 flex justify-center items-center">
               <button
                 onClick={() => setPages("matching")}
-                className={`p-[24px] w-[282px] h-[187px] border-[1px] border-gray-400 text-center bg-gray-200 rounded-[16px] flex flex-col justify-center items-center gap-[4px] ${
+                className={`p-[24px] w-[282px] h-[187px] border-[1px] border-gray-400 text-center bg-gray-200 rounded-[16px] flex flex-col justify-center items-center gap-[4px] active:scale-95 ${
                   pages === "matching" ? "border-purple-500" : ""
                 }`}
               >
@@ -472,7 +472,7 @@ const MatchingPage = () => {
                 </div>
 
                 {matchingData && (
-                  <div className="carousel carousel-vertical rounded-box h-[144px]">
+                  <div className="carousel carousel-vertical rounded-box max-[1440px]:h-[185px] min-[1919px]:h-[200px]">
                     {matchingData.map((matchdata, index_matchdata) => (
                       <div
                         key={index_matchdata}
@@ -482,10 +482,10 @@ const MatchingPage = () => {
                           onClick={() => {
                             handleStartConversation(matchdata, index_matchdata);
                           }}
-                          className={`px-[12px] py-[16px] w-full bg-gray-100 border-[1px]  rounded-[16px] flex gap-[12px] ${
+                          className={`px-[12px] py-[16px] w-full border-[1px] rounded-[16px] flex gap-[12px] active:bg-gray-300 ${
                             pages === "chatting" &&
                             activeChatIndex === index_matchdata
-                              ? "border-purple-500"
+                              ? "bg-gray-100 border-purple-500"
                               : ""
                           }`}
                         >
@@ -498,7 +498,21 @@ const MatchingPage = () => {
                               {matchdata.name}
                             </div>
                             <div className="text-[14px] font-[500] text-gray-700">
-                              current chat
+                              {messages[matchdata._id]?.length > 0
+                                ? messages[matchdata._id][
+                                    messages[matchdata._id].length - 1
+                                  ].fromSelf
+                                  ? `You: ${
+                                      messages[matchdata._id][
+                                        messages[matchdata._id].length - 1
+                                      ].message.text
+                                    }`
+                                  : `${
+                                      messages[matchdata._id][
+                                        messages[matchdata._id].length - 1
+                                      ].message.text
+                                    }`
+                                : "Starting message..."}
                             </div>
                           </div>
                         </button>
@@ -570,13 +584,27 @@ const MatchingPage = () => {
                                     <div className="flex">
                                       <button
                                         onClick={handlePrevSlide}
-                                        className="w-[40px] text-[24px] active:text-[23px]"
+                                        disabled={activeDiscoverIndex === 0}
+                                        className={`w-[40px] active:text-[23px] ${
+                                          activeDiscoverIndex === 0
+                                            ? "text-[20px] opacity-50 cursor-not-allowed"
+                                            : "text-[24px]"
+                                        }`}
                                       >
                                         <FaArrowLeft />
                                       </button>
                                       <button
                                         onClick={handleNextSlide}
-                                        className="w-[40px] text-[24px] active:text-[23px]"
+                                        disabled={
+                                          activeDiscoverIndex ===
+                                          userData.length - 1
+                                        }
+                                        className={`w-[40px] active:text-[23px] ${
+                                          activeDiscoverIndex ===
+                                          userData.length - 1
+                                            ? "text-[20px] opacity-50 cursor-not-allowed"
+                                            : "text-[24px]"
+                                        }`}
                                       >
                                         <FaArrowRight />
                                       </button>
@@ -803,27 +831,27 @@ const MatchingPage = () => {
                           ? scrollRef
                           : null
                       }
-                      className={`flex mt-5 ${
+                      className={`flex ${
                         message.fromSelf ? "justify-end" : "justify-start"
                       }`}
                     >
                       {!message.fromSelf && (
-                        <div className="flex items-center gap-4 mt-5">
-                          <div className="w-12 h-12">
+                        <div className="flex items-center gap-4 mt-[16px]">
+                          <div className="h-[40px] flex items-end">
                             <img
                               src={selectedChatUser?.image[0].url}
-                              className="w-full h-full rounded-full object-cover"
+                              className="w-[37px] h-[37px] rounded-full object-cover"
                             />
                           </div>
-                          <span className="px-5 py-2 bg-purple-200 text-black rounded-[30px]">
+                          <span className="px-5 py-2 bg-purple-200 text-black rounded-tl-[30px] rounded-tr-[30px] rounded-bl-none rounded-br-[30px]">
                             {message.message?.text}
                           </span>
                         </div>
                       )}
 
                       {message.fromSelf && (
-                        <div className="flex justify-end mt-5">
-                          <span className="px-5 py-2 bg-purple-600 text-white rounded-[30px]">
+                        <div className="flex justify-end mt-[16px]">
+                          <span className="px-5 py-2 bg-purple-600 text-white rounded-tl-[30px] rounded-tr-[30px] rounded-bl-[30px] rounded-br-none">
                             {message.message?.text}
                           </span>
                         </div>
