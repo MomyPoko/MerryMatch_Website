@@ -42,12 +42,12 @@ interface MatchingRequest {
   status?: "pending" | "matched" | "rejected";
 }
 
-interface MatchingData {
-  id: string;
-  _id: string;
-  requesterUser: MatchingRequest;
-  receiverUser: MatchingRequest[];
-}
+// interface MatchingData {
+//   id: string;
+//   _id: string;
+//   requesterUser: MatchingRequest;
+//   receiverUser: MatchingRequest[];
+// }
 
 const Navbar = () => {
   const [selectedUser, setSelectedUser] = useState<MatchingRequest | null>(
@@ -493,17 +493,29 @@ const Navbar = () => {
                   </a>
                 </li>
                 <li>
-                  <a href="/settings">
+                  <a
+                    href="#"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      alert("This feature is not available at the moment.");
+                    }}
+                  >
                     <AiFillHeart className="text-red-100" /> Merry List
                   </a>
                 </li>
                 <li>
-                  <a href="/profile">
+                  <a href="/package">
                     <IoIosCube className="text-red-100" /> Merry Memberhip
                   </a>
                 </li>
                 <li>
-                  <a href="/settings">
+                  <a
+                    href="#"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      alert("This feature is not available at the moment.");
+                    }}
+                  >
                     <FaTriangleExclamation className="text-red-100" /> Compliant
                   </a>
                 </li>

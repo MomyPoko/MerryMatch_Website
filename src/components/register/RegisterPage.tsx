@@ -392,7 +392,7 @@ const Register: React.FC = () => {
         <div className={`w-[1200px] flex flex-col items-center gap-[35px]`}>
           <div className="w-full flex justify-between">
             <div className="flex flex-col">
-              <div>REGISTER</div>
+              <div className="text-beige-700">REGISTER</div>
               <div className="text-[46px] text-purple-500 font-bold flex flex-col leading-[1.2]">
                 <span>Join us and start</span>
                 <span>matching</span>
