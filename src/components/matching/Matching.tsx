@@ -3,6 +3,7 @@
 import { Swiper, SwiperSlide } from "swiper/react";
 import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
+import { useSearchParams } from "next/navigation";
 import { FaArrowLeft } from "react-icons/fa6";
 import { FaArrowRight } from "react-icons/fa6";
 import { IoClose } from "react-icons/io5";
@@ -72,8 +73,12 @@ const MatchingPage = () => {
   // const SOCKET_SERVER_URL = "http://localhost:4000";
 
   const swiperRef = useRef<any>(null);
+  const hasStartedChat = useRef(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const socket = useRef<Socket | null>(null);
+
+  const searchParams = useSearchParams();
+  const chatWith = searchParams.get("chatWith");
 
   const currentUserId = session?.user?.id;
 
@@ -87,6 +92,20 @@ const MatchingPage = () => {
       const response = await axios.post("/api/matching/index", {
         requesterId: currentUserId,
         receiverId: userId,
+        status,
+      });
+
+      await axios.post("/api/notification/index", {
+        senderId: currentUserId,
+        receiverId: userId,
+        type: "matchRequest",
+        message: `'${session?.user?.name} Just Merry You!`,
+      });
+
+      // socket อาจจะต้องแก้
+      socket.current?.emit("sendMatchRequest", {
+        fromUser: currentUserId,
+        toUser: userId,
         status,
       });
 
@@ -104,7 +123,6 @@ const MatchingPage = () => {
     }
   };
 
-  // func only show all data if user have status
   const getMatchingData = async () => {
     try {
       const response = await axios.get("/api/users/index", {
@@ -236,7 +254,7 @@ const MatchingPage = () => {
     setPages("chatting");
 
     if (swiperRef.current && swiperRef.current.swiper) {
-      swiperRef.current.swiper.slideTo(index);
+      swiperRef.current.swiper.slideTo(0);
     }
 
     try {
@@ -335,7 +353,7 @@ const MatchingPage = () => {
       setActiveDiscoverIndex(0);
       setActiveMerryIndex(0);
       setActiveChatIndex(0);
-      swiperRef.current?.swiper?.slideTo(activeDiscoverIndex);
+      swiperRef.current?.swiper?.slideTo(0);
     }
 
     if (pages === "merrymatch" && activeDiscoverIndex !== null) {
@@ -362,6 +380,16 @@ const MatchingPage = () => {
     messages,
     selectedUserId,
   ]);
+
+  useEffect(() => {
+    if (chatWith && matchingData.length > 0 && !hasStartedChat.current) {
+      const matchedUser = matchingData.find((user) => user._id === chatWith);
+      if (matchedUser) {
+        handleStartConversation(matchedUser, matchingData.indexOf(matchedUser));
+        hasStartedChat.current = true;
+      }
+    }
+  }, [chatWith, matchingData]);
 
   useEffect(() => {
     socket.current = io(process.env.NEXT_PUBLIC_SOCKET_SERVER_URL, {
@@ -472,7 +500,7 @@ const MatchingPage = () => {
                 </div>
 
                 {matchingData && (
-                  <div className="carousel carousel-vertical rounded-box max-[1440px]:h-[185px] min-[1919px]:h-[200px]">
+                  <div className="carousel carousel-vertical rounded-box min-[1440px]:h-[150px] min-[1919px]:h-[200px]">
                     {matchingData.map((matchdata, index_matchdata) => (
                       <div
                         key={index_matchdata}
@@ -820,7 +848,7 @@ const MatchingPage = () => {
                   </div>
                 </div>
               </div>
-              <div className="flex-1 min-h-0 px-4 pt-2 pb-[20px] overflow-y-auto scrollbar">
+              <div className="flex-1 h-full px-4 pt-2 pb-[20px] overflow-y-auto scrollbar">
                 {(messages[selectedUserId] || []).map(
                   (message, index_message) => (
                     <div

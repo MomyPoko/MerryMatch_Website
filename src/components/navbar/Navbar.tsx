@@ -17,6 +17,7 @@ import { FaArrowRight } from "react-icons/fa6";
 import { HiLocationMarker } from "react-icons/hi";
 import { IoClose } from "react-icons/io5";
 import { IoHeart } from "react-icons/io5";
+import { io, Socket } from "socket.io-client";
 import Link from "next/link";
 import Avatar from "@mui/material/Avatar";
 import axios from "axios";
@@ -26,7 +27,7 @@ import "swiper/css/navigation";
 import "swiper/css/pagination";
 
 interface MatchingRequest {
-  id: string;
+  _id: string;
   username: string;
   name: string;
   state: string;
@@ -47,80 +48,120 @@ interface MatchingData {
   receiverUser: MatchingRequest[];
 }
 
-const Navbar = ({ session }: { session: Session | null }) => {
-  const [matchingData, setMatchingData] = useState<{
-    sentRequests: MatchingData[];
-    receivedRequests: MatchingData[];
-  }>({ sentRequests: [], receivedRequests: [] });
+const Navbar = () => {
   const [selectedUser, setSelectedUser] = useState<MatchingRequest | null>(
     null
   );
   const [activeIndex, setActiveIndex] = useState<number>(0);
-  const [matchingStatus, setMatchingStatus] = useState<
-    "pending" | "matched" | "rejected"
-  >("pending");
+  const [notifications, setNotifications] = useState<any[]>([]);
 
   const { data: clientSession, status } = useSession();
   const swiperRef = useRef<any>(null);
+  const socket = useRef<Socket | null>(null);
   const router = useRouter();
 
   const userImage = clientSession?.user?.image?.[0]?.url;
   const userName = clientSession?.user?.name;
 
-  const getMatchingData = async () => {
+  // if (status === "loading") {
+  //   return <div className="h-[88px] bg-white shadow-md"></div>;
+  // }
+
+  const getNotifications = async () => {
     try {
-      const response = await axios.get(`/api/users/index`, {
-        params: {
-          fetchMatches: true, // ใช้ fetchMatches เพื่อดึงข้อมูล matching โดยตรง
-        },
-      });
+      const response = await axios.get("/api/notification/index");
 
-      const matching = response.data;
+      console.log("Notifications Data:", response.data);
 
-      // กรองข้อมูลตามสถานะ "pending" และ "matched"
-      const sentRequests = matching.filter(
-        (match: any) => match.status === "pending"
-      );
-      const receivedRequests = matching.filter(
-        (match: any) => match.status === "matched"
-      );
-
-      setMatchingData({
-        sentRequests,
-        receivedRequests,
-      });
-
-      console.log("Matching data fetch Navbar: ", matching);
+      // อัปเดต state ของ notifications ให้แสดงผลตอนกด FaBell
+      setNotifications(response.data);
     } catch (error) {
-      console.log("Error fetching matching: ", error);
+      console.log("Error fetching notifications:", error);
     }
   };
 
-  const updateMatching = async (userId: string, status: string) => {
+  const updateMatching = async (targetUserId: string, status: string) => {
     try {
-      const response = await axios.put(`/api/matching/${userId}`, {
-        userId: session?.user?.id,
-        status,
-      });
-      console.log("Matching status updated: ", response.data);
-      getMatchingData();
+      const currentUserId = clientSession?.user?.id;
+      const currentUserName = clientSession?.user?.name;
+
+      if (!currentUserId) {
+        console.error("User is not authenticated.");
+        return;
+      }
+
+      const updatedStatusMatching = await axios.put(
+        `/api/matching/${currentUserId}`,
+        {
+          targetUserId,
+          status,
+        }
+      );
+
+      const existingNotification = notifications.find(
+        (n) => n.sender._id === targetUserId && n.type === "matchRequest"
+      );
+
+      if (existingNotification) {
+        // ถ้า Reject ให้เปลี่ยนข้อความเป็น "You rejected user2"
+        if (status === "rejected") {
+          await axios.put(`/api/notification/${existingNotification._id}`, {
+            newMessage: `You rejected ${existingNotification.sender.name}`,
+            type: "rejected",
+          });
+        }
+        // ถ้า Match ให้เปลี่ยนข้อความเป็น "You and user2 Merry"
+        else if (status === "matched") {
+          await axios.put(`/api/notification/${existingNotification._id}`, {
+            newMessage: `You and ${existingNotification.sender.name} Merry`,
+            type: "matchSuccess",
+          });
+
+          // แจ้งเตือน user2 ว่าถูก Match กลับ
+          await axios.post("/api/notification/index", {
+            senderId: currentUserId,
+            receiverId: targetUserId,
+            type: "matchResponse",
+            message: `'${currentUserName}' Merry you back!`,
+          });
+        }
+      }
+
+      // console.log("Update Status Match data: ", updatedStatusMatching);
+      // console.log("Create Notification data: ", createdNotification);
+
+      setNotifications((prev) =>
+        prev.filter((n) => n.sender._id !== targetUserId)
+      );
+
+      await getNotifications();
     } catch (error) {
       console.log("Error updating matching: ", error);
     }
   };
 
-  const handleShowModal = (user: MatchingRequest) => {
-    setSelectedUser(user);
+  const handleNextToChat = (matchedUserId: string) => {
+    router.push(`/matching?chatWith=${matchedUserId}`);
   };
 
-  const handleCloseModal = (event: React.MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault();
+  const handleShowModal = (notification: any) => {
+    setSelectedUser(notification.sender);
+
+    // เอาการแจ้งเตือนออกจาก list
+    setNotifications((prev) => prev.filter((n) => n !== notification));
+  };
+
+  const handleCloseModal = (event?: React.MouseEvent<HTMLButtonElement>) => {
+    if (event) {
+      event.preventDefault();
+    }
+
     const modal = document.getElementById("my_modal_3") as HTMLDialogElement;
     if (modal) {
       modal.close();
     }
     setSelectedUser(null);
-    setActiveIndex(0); // รีเซ็ต index เป็น 0
+    setActiveIndex(0);
   };
 
   const handleNextSlide = () => {
@@ -137,7 +178,7 @@ const Navbar = ({ session }: { session: Session | null }) => {
 
   useEffect(() => {
     if (status === "authenticated") {
-      getMatchingData(); // เรียก API เฉพาะเมื่อผู้ใช้ล็อกอินแล้ว
+      getNotifications(); // เรียก API เฉพาะเมื่อผู้ใช้ล็อกอินแล้ว
     }
 
     if (selectedUser) {
@@ -146,7 +187,7 @@ const Navbar = ({ session }: { session: Session | null }) => {
         modal.showModal();
       }
     }
-  }, [status, selectedUser]);
+  }, [selectedUser]);
 
   return (
     <div className="sticky top-0 z-50 px-[200px] border-[1px] w-full h-[88px] bg-white flex flex-row justify-between items-center shadow-md">
@@ -208,67 +249,80 @@ const Navbar = ({ session }: { session: Session | null }) => {
                 tabIndex={0}
                 className="dropdown-content menu bg-base-100 rounded-box z-[1] w-[275px] p-2 shadow"
               >
-                {/* {matchingData.receivedRequests.length > 0 ? (
+                {notifications.length > 0 ? (
                   <div className="carousel carousel-vertical rounded-box h-[222px]">
-                    {matchingData.receivedRequests.map(
-                      (invitation, index_invitation) => {
-                        const requesterStatus = invitation.receiverUser.find(
-                          (user) => user.id === clientSession?.user?.id
-                        )?.status;
+                    {notifications.map((notification, index_notification) => (
+                      <button
+                        key={index_notification}
+                        className={`carousel-item px-[14px] py-[12px] w-[230px] border-b-[1px] flex items-start gap-[10px] hover:bg-gray-100 ${
+                          notification.type === "rejected"
+                            ? "opacity-50 cursor-not-allowed"
+                            : ""
+                        }`}
+                        onClick={() => {
+                          if (notification.type === "matchRequest") {
+                            handleShowModal(notification);
+                          } else if (notification.type === "matchResponse") {
+                            handleNextToChat(notification.sender._id);
+                          }
+                        }}
+                        disabled={notification.type === "rejected"}
+                      >
+                        <span className="w-[40px] h-[40px] relative">
+                          <img
+                            src={notification.sender?.image?.[0]?.url}
+                            className="absolute w-[40px] h-[40px] rounded-[100%]"
+                          />
+                          {notification.type === "matchRequest" ? (
+                            <img
+                              src="/images/icon-oneheart.png"
+                              className="absolute right-0 bottom-0 w-[10px] h-[10px]"
+                              alt="Pending"
+                            />
+                          ) : notification.type === "matchResponse" ? (
+                            <img
+                              src="/images/icon-doubleheart.png"
+                              className="absolute right-0 bottom-0 w-[20px] h-[10px]"
+                              alt="Matched"
+                            />
+                          ) : notification.type === "matchSuccess" ? (
+                            <img
+                              src={userImage}
+                              className="absolute right-0 bottom-0 w-[20px] h-[20px] rounded-[100%]"
+                              alt="Matched"
+                            />
+                          ) : null}
+                        </span>
 
-                        return (
-                          <button
-                            key={index_invitation}
-                            className="carousel-item px-[14px] py-[12px] w-[230px] border-b-[1px] flex items-start gap-[10px] hover:bg-gray-100"
-                            onClick={() =>
-                              handleShowModal(invitation.requesterUser)
-                            }
-                          >
-                            <span className="w-[40px] h-[40px] relative">
-                              <img
-                                src={invitation.requesterUser.image[0].url}
-                                className="absolute w-[40px] h-[40px] rounded-[100%]"
-                              />
-                              {requesterStatus === "pending" ? (
-                                <img
-                                  src="/images/icon-oneheart.png"
-                                  className="absolute right-0 bottom-0 w-[10px] h-[10px]"
-                                  alt="Pending"
-                                />
-                              ) : requesterStatus === "matched" ? (
-                                <img
-                                  src="/images/icon-doubleheart.png"
-                                  className="absolute right-0 bottom-0 w-[20px] h-[10px]"
-                                  alt="Matched"
-                                />
-                              ) : null}
-                            </span>
-
-                            {requesterStatus === "pending" ? (
-                              <span className="text-left flex flex-col justify-start">
-                                <div>
-                                  &apos;{invitation.requesterUser.name}&apos;
-                                  Just Merry you!
-                                </div>
-                                <div>Click here to see profile</div>
-                              </span>
-                            ) : requesterStatus === "matched" ? (
-                              <span className="text-left flex flex-col justify-start">
-                                <div>
-                                  &apos;{invitation.requesterUser.name}&apos;
-                                  Merry you back!
-                                </div>
-                                <div>Let&apos;s start conversation now</div>
-                              </span>
-                            ) : null}
-                          </button>
-                        );
-                      }
-                    )}
+                        <span className="text-left flex flex-col justify-start">
+                          {notification.type === "matchRequest" ? (
+                            <>
+                              <div>{notification.message}</div>
+                              <div>Click here to see profile</div>
+                            </>
+                          ) : notification.type === "matchResponse" ? (
+                            <>
+                              <div>{notification.message}</div>
+                              <div>Let's start conversation now</div>
+                            </>
+                          ) : notification.type === "matchSuccess" ? (
+                            <>
+                              <div>{notification.message}</div>
+                              <div>Let's start conversation now</div>
+                            </>
+                          ) : notification.type === "rejected" ? (
+                            <>
+                              <div>{notification.message}</div>
+                              <div>Can't see Profile</div>
+                            </>
+                          ) : null}
+                        </span>
+                      </button>
+                    ))}
                   </div>
                 ) : (
                   <div>empty!</div>
-                )} */}
+                )}
               </div>
             </div>
 
@@ -306,20 +360,23 @@ const Navbar = ({ session }: { session: Session | null }) => {
                             </SwiperSlide>
                           ))}
                         </Swiper>
+
                         <div className="absolute z-10 bottom-[-30px] border-gray-700 w-full text-[32px] flex justify-center items-center">
                           <div className="flex gap-[24px]">
                             <button
-                              onClick={() =>
-                                updateMatching("rejected", selectedUser.id)
-                              }
+                              onClick={() => {
+                                updateMatching(selectedUser._id, "rejected");
+                                handleCloseModal();
+                              }}
                               className="w-[60px] h-[60px] text-[42px] text-gray-700 bg-white rounded-[16px] flex justify-center items-center shadow-md active:text-[40px]"
                             >
                               <IoClose />
                             </button>
                             <button
-                              onClick={() =>
-                                updateMatching("matched", selectedUser.id)
-                              }
+                              onClick={() => {
+                                updateMatching(selectedUser._id, "matched");
+                                handleCloseModal();
+                              }}
                               className="w-[60px] h-[60px] text-[36px] text-red-500 bg-white rounded-[16px] flex justify-center items-center shadow-md active:text-[34px]"
                             >
                               <IoHeart />
@@ -327,7 +384,7 @@ const Navbar = ({ session }: { session: Session | null }) => {
                           </div>
                         </div>
                       </div>
-                      <div className="w-full h-full flex justify-between">
+                      <div className="flex justify-between">
                         <div className="px-[24px] py-[12px]">
                           {activeIndex + 1}/{selectedUser.image.length}
                         </div>

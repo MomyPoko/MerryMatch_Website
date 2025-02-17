@@ -1,9 +1,11 @@
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/utils/authOptions";
 import { connectMongoDB } from "@/utils/mongodb";
 import { NextRequest, NextResponse } from "next/server";
 import User from "@/models/user";
 
 interface UpdateMatchingRequest {
-  requesterId: string;
+  targetUserId: string;
   status: "pending" | "matched" | "rejected";
 }
 
@@ -14,45 +16,62 @@ export const PUT = async (
   try {
     await connectMongoDB();
 
-    const { requesterId, status }: UpdateMatchingRequest = await req.json();
-
-    const requester = await User.findById(requesterId);
-    const receiver = await User.findById(params.id);
-
-    if (!requester || !receiver) {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user?.id) {
       return NextResponse.json(
-        { message: "Requester or Receiver not found" },
+        { message: "Not authenticated" },
+        { status: 401 }
+      );
+    }
+
+    const currentUserId = session.user.id;
+    const { targetUserId, status }: UpdateMatchingRequest = await req.json();
+
+    console.log("🔥 API PUT /api/matching/[id] called!");
+    console.log("Params ID:", params.id);
+    console.log("Current User ID:", currentUserId);
+    console.log("Target User ID:", targetUserId);
+    console.log("Status:", status);
+
+    const currentUser = await User.findById(currentUserId);
+    const targetUser = await User.findById(targetUserId);
+
+    console.log("Check currentuser: ", currentUser);
+
+    if (!currentUser || !targetUser) {
+      return NextResponse.json(
+        { message: "currentUser or targetUser not found" },
         { status: 404 }
       );
     }
 
-    const requesterMatchIndex = requester.matching.findIndex(
-      (match: any) => match.userId.toString() === params.id
+    const currentUserMatchIndex = currentUser.matching.findIndex(
+      (match: any) => match.userId.toString() === targetUserId
     );
 
-    if (requesterMatchIndex === -1) {
+    if (currentUserMatchIndex === -1) {
       return NextResponse.json(
         { message: "Match not found for requester" },
         { status: 404 }
       );
     }
 
-    requester.matching[requesterMatchIndex].status = status;
-    await requester.save();
+    currentUser.matching[currentUserMatchIndex].status = status;
+    await currentUser.save();
 
-    const receiverMatchIndex = receiver.matching.findIndex(
-      (match: any) => match.userId.toString() === requesterId
+    const targetUserMatchIndex = targetUser.matching.findIndex(
+      (match: any) => match.userId.toString() === currentUserId
     );
 
-    if (receiverMatchIndex === -1) {
+    if (targetUserMatchIndex === -1) {
       return NextResponse.json(
         { message: "Match not found for receiver" },
         { status: 404 }
       );
     }
 
-    receiver.matching[receiverMatchIndex].status = status;
-    await receiver.save();
+    targetUser.matching[targetUserMatchIndex].status = status;
+    await targetUser.save();
 
     return NextResponse.json(
       { message: "Matching status updated successfully" },

@@ -39,7 +39,11 @@ export default function HomePage() {
   };
 
   useEffect(() => {
-    if (status === "loading") return;
+    if (status === "loading") {
+      <div className="w-screen h-screen flex justify-center items-center">
+        <p className="text-xl font-semibold text-gray-700">Loading...</p>
+      </div>;
+    }
   }, [status]);
 
   return (
