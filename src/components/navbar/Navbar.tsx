@@ -38,6 +38,7 @@ interface MatchingRequest {
   meeting: string;
   hobbies: string;
   image: { url: string; publicId: string }[];
+  dateOfBirth: string;
   status?: "pending" | "matched" | "rejected";
 }
 
@@ -106,14 +107,14 @@ const Navbar = () => {
         // ถ้า Reject ให้เปลี่ยนข้อความเป็น "You rejected user2"
         if (status === "rejected") {
           await axios.put(`/api/notification/${existingNotification._id}`, {
-            newMessage: `You rejected ${existingNotification.sender.name}`,
+            newMessage: `You rejected '${existingNotification.sender.name}'`,
             type: "rejected",
           });
         }
         // ถ้า Match ให้เปลี่ยนข้อความเป็น "You and user2 Merry"
         else if (status === "matched") {
           await axios.put(`/api/notification/${existingNotification._id}`, {
-            newMessage: `You and ${existingNotification.sender.name} Merry`,
+            newMessage: `You and '${existingNotification.sender.name}' Merry`,
             type: "matchSuccess",
           });
 
@@ -303,17 +304,17 @@ const Navbar = () => {
                           ) : notification.type === "matchResponse" ? (
                             <>
                               <div>{notification.message}</div>
-                              <div>Let's start conversation now</div>
+                              <div>Let&apos;s start conversation now</div>
                             </>
                           ) : notification.type === "matchSuccess" ? (
                             <>
                               <div>{notification.message}</div>
-                              <div>Let's start conversation now</div>
+                              <div>Let&apos;s start conversation now</div>
                             </>
                           ) : notification.type === "rejected" ? (
                             <>
                               <div>{notification.message}</div>
-                              <div>Can't see Profile</div>
+                              <div>Can&apos;t see Profile</div>
                             </>
                           ) : null}
                         </span>
@@ -422,6 +423,7 @@ const Navbar = () => {
                           </div>
                         </div>
                       </div>
+
                       <div className="w-full">
                         <div className="w-full flex items-center">
                           <div className="w-[45%] text-gray-900 text-[16px] font-[400]">

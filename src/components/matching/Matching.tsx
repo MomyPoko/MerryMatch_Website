@@ -10,6 +10,7 @@ import { IoClose } from "react-icons/io5";
 import { IoHeart } from "react-icons/io5";
 import { AiFillEye } from "react-icons/ai";
 import { RiSendPlaneFill } from "react-icons/ri";
+import { HiLocationMarker } from "react-icons/hi";
 import { BsEmojiSmileFill } from "react-icons/bs";
 import { io, Socket } from "socket.io-client";
 import axios from "axios";
@@ -26,10 +27,17 @@ import "@/app/globals.css";
 
 interface UserData {
   _id: string;
-  id: string;
+  username: string;
   name: string;
+  state: string;
+  country: string;
+  sexIdent: string;
+  sexPref: string;
+  racialPref: string;
+  meeting: string;
+  hobbies: string;
+  image: { url: string; publicId: string }[];
   dateOfBirth: string;
-  image: { url: string }[];
 }
 
 interface MatchingData {
@@ -43,6 +51,7 @@ interface MatchingData {
 
 const MatchingPage = () => {
   const [userData, setUserData] = useState<UserData[] | null>(null);
+  const [selectedProfile, setSelectedProfile] = useState<UserData | null>(null);
   const [matchingData, setMatchingData] = useState<MatchingData[]>([]);
   const [inputMsg, setInputMsg] = useState<{ [key: string]: string }>({});
   const [messages, setMessages] = useState<{ [key: string]: any[] }>({});
@@ -60,6 +69,7 @@ const MatchingPage = () => {
   const [activeDiscoverIndex, setActiveDiscoverIndex] = useState<number>(0);
   const [activeMerryIndex, setActiveMerryIndex] = useState<number>(0);
   const [activeChatIndex, setActiveChatIndex] = useState<number>(0);
+  const [activeImageModalIndex, setActiveImageModalIndex] = useState<number>(0);
 
   const [ageRange, setAgeRange] = useState<number[]>([18, 50]);
   const [selectedAgeRange, setSelectedAgeRange] = useState<number[]>([18, 50]);
@@ -73,6 +83,7 @@ const MatchingPage = () => {
   // const SOCKET_SERVER_URL = "http://localhost:4000";
 
   const swiperRef = useRef<any>(null);
+  const swiperModalRef = useRef<any>(null);
   const hasStartedChat = useRef(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const socket = useRef<Socket | null>(null);
@@ -99,7 +110,7 @@ const MatchingPage = () => {
         senderId: currentUserId,
         receiverId: userId,
         type: "matchRequest",
-        message: `'${session?.user?.name} Just Merry You!`,
+        message: `'${session?.user?.name}' Just Merry You!`,
       });
 
       // socket อาจจะต้องแก้
@@ -337,6 +348,32 @@ const MatchingPage = () => {
     }
   };
 
+  const handleOpenModal = (user: UserData) => {
+    setSelectedProfile(user);
+    setActiveImageModalIndex(0);
+  };
+
+  const handleCloseModal = () => {
+    const modal = document.getElementById("my_modal_3") as HTMLDialogElement;
+    if (modal) {
+      modal.close();
+    }
+    setSelectedProfile(null);
+    setActiveImageModalIndex(0);
+  };
+
+  const handleNextSlideImageModal = () => {
+    if (swiperModalRef.current && swiperModalRef.current.swiper) {
+      swiperModalRef.current.swiper.slideNext();
+    }
+  };
+
+  const handlePrevSlideImageModal = () => {
+    if (swiperModalRef.current && swiperModalRef.current.swiper) {
+      swiperModalRef.current.swiper.slidePrev();
+    }
+  };
+
   useEffect(() => {
     getMatchingData();
 
@@ -390,6 +427,15 @@ const MatchingPage = () => {
       }
     }
   }, [chatWith, matchingData]);
+
+  useEffect(() => {
+    if (selectedProfile) {
+      const modal = document.getElementById("my_modal_3") as HTMLDialogElement;
+      if (modal) {
+        modal.showModal();
+      }
+    }
+  });
 
   useEffect(() => {
     socket.current = io(process.env.NEXT_PUBLIC_SOCKET_SERVER_URL, {
@@ -604,7 +650,10 @@ const MatchingPage = () => {
                                         </span>
                                       </span>
 
-                                      <button className="w-[32px] h-[32px] text-[20px] bg-white/20 rounded-[100%] flex justify-center items-center active:text-[18px]">
+                                      <button
+                                        onClick={() => handleOpenModal(data)}
+                                        className="w-[32px] h-[32px] text-[20px] bg-white/20 rounded-[100%] flex justify-center items-center active:text-[18px]"
+                                      >
                                         <AiFillEye />
                                       </button>
                                     </div>
@@ -665,6 +714,7 @@ const MatchingPage = () => {
                           </SwiperSlide>
                         ))}
                       </Swiper>
+
                       <div className="flex gap-[10px]">
                         <span className="text-gray-700 text-[16px] font-[400]">
                           Merry limit today
@@ -673,6 +723,138 @@ const MatchingPage = () => {
                           {activeDiscoverIndex + 1}/20
                         </span>
                       </div>
+
+                      {selectedProfile && (
+                        <dialog id="my_modal_3" className="modal">
+                          <div
+                            className="modal-box"
+                            style={{
+                              width: "1000px",
+                              maxWidth: "100%",
+                              height: "550px",
+                            }}
+                          >
+                            <form method="dialog">
+                              <button
+                                className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+                                onClick={handleCloseModal}
+                              >
+                                ✕
+                              </button>
+                            </form>
+                            <div className="p-[20px_0px_20px_20px] w-full h-full flex justify-between gap-[15px]">
+                              <div className="w-[50%] h-[80%] flex flex-col gap-[25px]">
+                                <div className="relative w-full h-full">
+                                  <Swiper
+                                    slidesPerView={1}
+                                    ref={swiperModalRef}
+                                    onSlideChange={(swiper) =>
+                                      setActiveImageModalIndex(swiper.realIndex)
+                                    }
+                                    className="absolute w-full h-[100%] flex overflow-hidden"
+                                  >
+                                    {selectedProfile.image.map(
+                                      (image, index_image) => (
+                                        <SwiperSlide key={index_image}>
+                                          <img
+                                            src={image.url}
+                                            className="w-full h-full object-cover rounded-[32px]"
+                                          />
+                                        </SwiperSlide>
+                                      )
+                                    )}
+                                  </Swiper>
+                                </div>
+                                <div className="flex justify-between">
+                                  <div className="px-[24px] py-[12px]">
+                                    {activeImageModalIndex + 1}/
+                                    {selectedProfile.image.length}
+                                  </div>
+                                  <div className="flex">
+                                    <button
+                                      onClick={handlePrevSlideImageModal}
+                                      className="w-[38px] text-[20px] active:text-[19px]"
+                                    >
+                                      <FaArrowLeft />
+                                    </button>
+                                    <button
+                                      onClick={handleNextSlideImageModal}
+                                      className="w-[38px] text-[20px] active:text-[19px]"
+                                    >
+                                      <FaArrowRight />
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="pt-[16px] pl-[60px] w-full flex flex-col gap-[60px]">
+                                <div className="flex flex-col gap-[8px]">
+                                  <div className="flex gap-[16px]">
+                                    <div className="text-gray-900 text-[46px] font-[800]">
+                                      {selectedProfile.name}
+                                    </div>
+                                    <div className="text-gray-700 text-[46px] font-[800]">
+                                      {calculateAge(
+                                        selectedProfile.dateOfBirth
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-[10px]">
+                                    <HiLocationMarker className="text-red-200 text-[20px]" />
+                                    <div className="text-gray-700 text-[20px] font-[600]">
+                                      {selectedProfile.state},
+                                      {selectedProfile.country}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="w-full">
+                                  <div className="w-full flex items-center">
+                                    <div className="w-[45%] text-gray-900 text-[16px] font-[400]">
+                                      Sexual identities
+                                    </div>
+                                    <div className="w-[55%] text-gray-700 text-[20px] font-[600]">
+                                      {selectedProfile.sexIdent}
+                                    </div>
+                                  </div>
+                                  <div className="w-full flex items-center">
+                                    <div className="w-[45%] text-gray-900 text-[16px] font-[400]">
+                                      Sexual preferences
+                                    </div>
+                                    <div className="w-[55%] text-gray-700 text-[20px] font-[600]">
+                                      {selectedProfile.sexPref}
+                                    </div>
+                                  </div>
+                                  <div className="w-full flex items-center">
+                                    <div className="w-[45%] text-gray-900 text-[16px] font-[400]">
+                                      Racial preferences
+                                    </div>
+                                    <div className="w-[55%] text-gray-700 text-[20px] font-[600]">
+                                      {selectedProfile.racialPref}
+                                    </div>
+                                  </div>
+                                  <div className="w-full flex items-center">
+                                    <div className="w-[45%] text-gray-900 text-[16px] font-[400]">
+                                      Meeting interests
+                                    </div>
+                                    <div className="w-[55%] text-gray-700 text-[20px] font-[600]">
+                                      {selectedProfile.meeting}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="text-gray-900 text-[24px] font-[700]">
+                                    hobies and interest
+                                  </div>
+                                  <div className="text-gray-900 text-[16px] font-[400]">
+                                    {selectedProfile.hobbies}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </dialog>
+                      )}
                     </div>
                   ) : (
                     <div className="w-full h-full flex flex-col justify-center items-center">
