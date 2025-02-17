@@ -58,7 +58,7 @@ const Navbar = () => {
 
   const { data: clientSession, status } = useSession();
   const swiperRef = useRef<any>(null);
-  const socket = useRef<Socket | null>(null);
+  // const socket = useRef<Socket | null>(null);
   const router = useRouter();
 
   const userImage = clientSession?.user?.image?.[0]?.url;
