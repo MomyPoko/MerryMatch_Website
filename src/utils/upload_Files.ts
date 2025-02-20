@@ -38,3 +38,21 @@ export const uploadToCloudinary = async (filePath: File, folder: string) => {
     throw new Error(`File upload failed: ${error}`);
   }
 };
+
+export const deleteFromCloudinary = async (publicId: string) => {
+  return new Promise<void>((resolve, reject) => {
+    if (!publicId) {
+      console.error("Invalid publicId:", publicId);
+      return reject("Invalid publicId");
+    }
+
+    cloudinary.uploader.destroy(publicId, (error, result) => {
+      if (error) {
+        console.error("Error deleting image:", error);
+        return reject(error);
+      }
+      console.log("Cloudinary delete result:", result);
+      resolve();
+    });
+  });
+};

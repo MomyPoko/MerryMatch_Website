@@ -8,7 +8,7 @@ import { FaCheck } from "react-icons/fa6";
 const Package = () => {
   return (
     <div className="pt-[50px] w-full bg-BGMain flex flex-col items-center">
-      <div className="w-[1120px] flex flex-col gap-[60px]">
+      <div className="flex flex-col gap-[40px]">
         <div className="flex flex-col gap-[8px]">
           <div className="text-beige-700">MERRY MEMBERSHIP</div>
           <div className="text-[46px] text-purple-500 font-bold leading-[1.2] flex flex-col">
@@ -17,7 +17,7 @@ const Package = () => {
           </div>
         </div>
         <div className="flex gap-[24px]">
-          <div className="p-[40px] w-[355px] bg-white border-[1px] rounded-[32px] flex flex-col gap-[24px]">
+          <div className="px-[40px] pt-[40px] w-[350px] border-[1px] rounded-[32px] flex flex-col gap-[24px]">
             <div className="w-[60px] h-[60px] bg-gray-100 rounded-[16px] flex justify-center items-center">
               <IoHeart className="text-[30px] text-purple-400" />
             </div>

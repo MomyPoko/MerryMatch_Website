@@ -6,8 +6,8 @@ const secret = process.env.NEXTAUTH_SECRET;
 
 // ฟังก์ชันเช็คว่า token หมดอายุหรือไม่
 function isTokenExpired(token: any) {
-  const expiry = token.exp; // ค่าที่มาจาก token
-  return Date.now() >= expiry * 1000; // เปลี่ยนเป็น milliseconds
+  if (!token || !token.exp) return true; // ค่าที่มาจาก token
+  return Date.now() >= token.exp * 1000; // เปลี่ยนเป็น milliseconds
 }
 
 export async function middleware(req: NextRequest) {
@@ -17,7 +17,11 @@ export async function middleware(req: NextRequest) {
   const token = await getToken({ req, secret });
 
   if (!token || isTokenExpired(token)) {
-    if (url.pathname.startsWith("/matching")) {
+    if (
+      url.pathname.startsWith("/matching") ||
+      url.pathname.startsWith("/profile") ||
+      url.pathname.startsWith("/package")
+    ) {
       return NextResponse.redirect(new URL("/auth/login", url.origin));
     }
     return NextResponse.next();
@@ -37,5 +41,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/api/auth/register", "/matching"],
+  matcher: ["/api/auth/register", "/matching", "/profile", "/package"],
 };

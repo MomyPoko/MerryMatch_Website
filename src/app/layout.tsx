@@ -4,6 +4,7 @@ import "./globals.css";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { getServerSession } from "next-auth";
+import { authOptions } from "@/utils/authOptions";
 import AuthProvider from "@/utils/session_Provider";
 
 const nunito = Nunito({ subsets: ["latin"] });
@@ -18,7 +19,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await getServerSession();
+  const session = await getServerSession(authOptions);
   console.log("Session from server:", session);
 
   return (

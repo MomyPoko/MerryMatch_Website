@@ -117,7 +117,7 @@ const Register: React.FC = () => {
     if (file) {
       setAvatarImage((prevImages) => {
         const updatedImages = { ...prevImages, [key_images]: file };
-        console.log("check avatarimage", updatedImages);
+        // console.log("check avatarimage", updatedImages);
         return updatedImages;
       });
     }
@@ -285,7 +285,7 @@ const Register: React.FC = () => {
       validationErrors = validateForm2();
     }
 
-    setErrors(validationErrors); // อัปเดต errors แบบเรียลไทม์
+    setErrors(validationErrors);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -293,6 +293,7 @@ const Register: React.FC = () => {
 
     // handleSubmit ควรถูกเรียกเฉพาะใน Step 3
     if (currentStep !== 3) {
+      console.log("Not in step 3, skipping submit.");
       return;
     }
 
@@ -384,12 +385,12 @@ const Register: React.FC = () => {
   }, [allData.country]);
 
   return (
-    <div className="w-full h-full flex flex-col max-[1440px]:pt-[25px] min-[1919px]:pt-[75px]">
+    <div className="w-full h-full flex flex-col max-[1440px]:pt-[20px] min-[1919px]:pt-[75px]">
       <form
         onSubmit={handleSubmit}
         className="w-full h-full flex flex-col items-center"
       >
-        <div className={`w-[1200px] flex flex-col items-center gap-[35px]`}>
+        <div className={`w-[1200px] flex flex-col items-center gap-[30px]`}>
           <div className="w-full flex justify-between">
             <div className="flex flex-col">
               <div className="text-beige-700">REGISTER</div>
@@ -482,7 +483,7 @@ const Register: React.FC = () => {
           </div>
 
           {currentStep === 1 && (
-            <div className="w-full h-full flex flex-col gap-[24px]">
+            <div className="w-full h-full flex flex-col gap-[16px]">
               <div className="text-[24px] text-purple-500">
                 Basic Information
               </div>
@@ -810,7 +811,8 @@ const Register: React.FC = () => {
             </button>
             <button
               type="submit"
-              className="bg-red-500 p-[12px_24px_12px_24px] text-white rounded-[99px]"
+              onClick={handleSubmit}
+              className="bg-red-500 p-[12px_24px_12px_24px] text-white rounded-[99px] active:scale-95"
             >
               Confirm
             </button>

@@ -221,6 +221,8 @@ const MatchingPage = () => {
   const handleSearch = () => {
     setSexIdent([...selectedSexIdent]);
     setAgeRange(selectedAgeRange);
+
+    getUserData();
   };
 
   const handleClear = () => {
@@ -473,7 +475,7 @@ const MatchingPage = () => {
 
   return (
     <div className="w-full h-full flex overflow-hidden">
-      {userData && (
+      {
         <>
           <div className="w-[20%] h-full flex flex-col">
             <div className="py-[30px] w-full border-b-[1px] border-gray-300 flex justify-center items-center">
@@ -1108,7 +1110,7 @@ const MatchingPage = () => {
             </div>
           ) : null}
         </>
-      )}
+      }
     </div>
   );
 };
